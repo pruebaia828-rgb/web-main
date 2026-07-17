@@ -14,6 +14,8 @@ interface ScanResult {
   message: string;
 }
 
+type CameraFacingMode = 'environment' | 'user';
+
 export default function ScannerPage() {
   const router = useRouter();
   const { session, profile, loading, signOut } = useAuth();
@@ -23,6 +25,7 @@ export default function ScannerPage() {
   const [scanRequested, setScanRequested] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [cameraMode, setCameraMode] = useState<CameraFacingMode>('environment');
   const scannerContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -100,10 +103,11 @@ export default function ScannerPage() {
     setProcessing(false);
   };
 
-  const startScanner = async () => {
+  const startScanner = async (nextMode: CameraFacingMode = cameraMode) => {
     setResult(null);
     setCameraError(null);
     setScanning(true);
+    setCameraMode(nextMode);
 
     if (scannerInstance) {
       try {
@@ -128,12 +132,14 @@ export default function ScannerPage() {
         const html5Qrcode = new Html5Qrcode('qr-reader');
         setScannerInstance(html5Qrcode);
 
-        let cameraConfig: any = { facingMode: 'environment' };
+        let cameraConfig: any = { facingMode: cameraMode };
         try {
           const cameras = await Html5Qrcode.getCameras();
           if (cameras && cameras.length > 0) {
-            const rearCamera = cameras.find((camera) => /rear|back|environment/i.test(camera.label)) || cameras[0];
-            cameraConfig = { deviceId: { exact: rearCamera.id } };
+            const preferredCamera = cameraMode === 'environment'
+              ? cameras.find((camera) => /rear|back|environment/i.test(camera.label)) || cameras[0]
+              : cameras.find((camera) => /front|user|face/i.test(camera.label)) || cameras.find((camera) => /rear|back|environment/i.test(camera.label)) || cameras[0];
+            cameraConfig = { deviceId: { exact: preferredCamera.id } };
           }
         } catch {
           // ignore and use facingMode fallback
@@ -180,6 +186,13 @@ export default function ScannerPage() {
     }
     setScanning(false);
     setScanRequested(false);
+  };
+
+  const switchCamera = async () => {
+    if (processing) return;
+    const nextMode: CameraFacingMode = cameraMode === 'environment' ? 'user' : 'environment';
+    await stopScanner();
+    await startScanner(nextMode);
   };
 
   useEffect(() => {
@@ -246,7 +259,7 @@ export default function ScannerPage() {
         {!scanning && !result && (
           <div className="flex flex-col items-center">
             <button
-              onClick={startScanner}
+              onClick={() => { void startScanner(); }}
               className="group flex items-center gap-3 rounded-xl gradient-neon px-8 py-4 text-lg font-semibold text-white transition-all hover:glow-md"
             >
               <ScanLine className="h-6 w-6" />
@@ -264,8 +277,14 @@ export default function ScannerPage() {
               </div>
             )}
             <button
-              onClick={stopScanner}
-              className="mt-6 rounded-lg border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
+              onClick={() => { void switchCamera(); }}
+              className="mt-4 rounded-lg border border-primary/30 bg-primary/10 px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+            >
+              {cameraMode === 'environment' ? 'Usar cámara frontal' : 'Usar cámara trasera'}
+            </button>
+            <button
+              onClick={() => { void stopScanner(); }}
+              className="mt-3 rounded-lg border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:text-destructive"
             >
               Cancelar
             </button>

@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'scanner';
+export type UserRole = 'admin' | 'scanner' | 'event_manager';
 
 export type TicketStatus = 'pending' | 'approved';
 

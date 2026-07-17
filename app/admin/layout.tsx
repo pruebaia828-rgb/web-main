@@ -14,13 +14,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!loading) {
       if (!session || !profile) {
         router.push('/login');
-      } else if (profile.role !== 'admin') {
+      } else if (profile.role !== 'admin' && profile.role !== 'event_manager') {
         router.push('/scanner');
       }
     }
   }, [loading, session, profile, router]);
 
-  if (loading || !session || !profile || profile.role !== 'admin') {
+  if (loading || !session || !profile || (profile.role !== 'admin' && profile.role !== 'event_manager')) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -43,18 +43,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <span className="font-display text-lg font-bold">
-                Dulcinea <span className="text-neon">Admin</span>
+                Dulcinea <span className="text-neon">{profile.role === 'event_manager' ? 'Eventos' : 'Admin'}</span>
               </span>
             </div>
             <div className="hidden items-center gap-1 sm:flex">
-              <a href="/admin/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </a>
-              <a href="/scanner" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
-                <QrCode className="h-4 w-4" />
-                Scanner
-              </a>
+              {profile.role === 'admin' ? (
+                <>
+                  <a href="/admin/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </a>
+                  <a href="/scanner" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
+                    <QrCode className="h-4 w-4" />
+                    Scanner
+                  </a>
+                </>
+              ) : (
+                <a href="/admin/events" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Eventos
+                </a>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4">

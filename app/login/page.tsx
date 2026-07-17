@@ -17,6 +17,8 @@ export default function LoginPage() {
     if (!loading && session && profile) {
       if (profile.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (profile.role === 'event_manager') {
+        router.push('/admin/events');
       } else if (profile.role === 'scanner') {
         router.push('/scanner');
       }

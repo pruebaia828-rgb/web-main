@@ -90,7 +90,8 @@ export function useAuth() {
     signOut,
     isAdmin: state.profile?.role === 'admin',
     isScanner: state.profile?.role === 'scanner',
-    isStaff: state.profile?.role === 'admin' || state.profile?.role === 'scanner',
+    isEventManager: state.profile?.role === 'event_manager',
+    isStaff: state.profile?.role === 'admin' || state.profile?.role === 'scanner' || state.profile?.role === 'event_manager',
   };
 }
 

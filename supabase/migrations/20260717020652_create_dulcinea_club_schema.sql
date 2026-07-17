@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text NOT NULL,
   full_name text,
-  role text NOT NULL DEFAULT 'scanner' CHECK (role IN ('admin', 'scanner')),
+  role text NOT NULL DEFAULT 'scanner' CHECK (role IN ('admin', 'scanner', 'event_manager')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -136,7 +136,7 @@ AS $$
   SELECT EXISTS (
     SELECT 1 FROM profiles
     WHERE profiles.id = auth.uid()
-    AND profiles.role IN ('admin', 'scanner')
+    AND profiles.role IN ('admin', 'scanner', 'event_manager')
   );
 $$;
 
