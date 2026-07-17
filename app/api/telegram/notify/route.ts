@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, getTelegramAdminChatId, formatTelegramValue } from '@/lib/telegram';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { sendTelegramMessage, getTelegramAdminChatId, getTelegramAdminChatIdsFromEnv, formatTelegramValue } from '@/lib/telegram';
+
+async function getTelegramNotificationChatIds() {
+  const chatIds = new Set<string | number>();
+
+  for (const chatId of getTelegramAdminChatIdsFromEnv()) {
+    chatIds.add(chatId);
+  }
+
+  const { data, error } = await supabaseAdmin.from('telegram_admins').select('telegram_id');
+  if (!error && data) {
+    for (const row of data) {
+      if (row?.telegram_id != null) {
+        chatIds.add(Number(row.telegram_id));
+      }
+    }
+  }
+
+  return Array.from(chatIds);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +40,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Faltan datos del ticket para enviar la notificación de Telegram.' }, { status: 400 });
     }
 
-    const chatId = getTelegramAdminChatId();
+    const chatIds = await getTelegramNotificationChatIds();
+    const fallbackChatId = chatIds.length > 0 ? null : getTelegramAdminChatId();
+    const notificationChatIds = chatIds.length > 0 ? chatIds : [fallbackChatId].filter((value): value is string | number => value !== null);
+
     const message = [
       '<b>Nuevo ticket pendiente</b>',
       `Evento: ${formatTelegramValue(eventTitle)}`,
@@ -45,8 +68,15 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    await sendTelegramMessage(chatId, message, replyMarkup);
-    return NextResponse.json({ ok: true });
+    for (const chatId of notificationChatIds) {
+      try {
+        await sendTelegramMessage(chatId, message, replyMarkup);
+      } catch (error) {
+        console.error('Telegram notification failed for chat', chatId, error);
+      }
+    }
+
+    return NextResponse.json({ ok: true, sentTo: notificationChatIds.length });
   } catch (error) {
     console.error('Telegram notify error', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Error desconocido' }, { status: 500 });

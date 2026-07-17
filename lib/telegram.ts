@@ -147,6 +147,18 @@ export function formatTelegramValue(value: unknown) {
   return escapeHtml(String(value));
 }
 
+export function getTelegramAdminChatIdsFromEnv() {
+  const raw = process.env.TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((value) => normalizeTelegramChatId(value.trim()))
+    .filter((value): value is string | number => value !== null && value !== undefined && value !== '');
+}
+
 export function getTelegramAdminChatId() {
   return requireTelegramChatId();
 }
