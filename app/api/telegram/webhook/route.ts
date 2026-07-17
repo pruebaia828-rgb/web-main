@@ -79,7 +79,12 @@ async function listTelegramAdmins() {
   return data || [];
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader) {
+    return NextResponse.json({ ok: true, message: 'Telegram webhook is live' });
+  }
+
   return NextResponse.json({ ok: true, message: 'Telegram webhook is live' });
 }
 
