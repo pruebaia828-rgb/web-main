@@ -80,8 +80,10 @@ async function listTelegramAdmins() {
 }
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader) {
+  const userAgent = request.headers.get('user-agent') || '';
+  const isTelegram = /telegram|bot/i.test(userAgent);
+
+  if (isTelegram) {
     return NextResponse.json({ ok: true, message: 'Telegram webhook is live' });
   }
 
